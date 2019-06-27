@@ -24,7 +24,7 @@ library(mlbench) # for Pima Indian Diabetes dataset
 library(caret) # for prediction building functions
 library(dplyr)
 library(e1071)
-
+library(robustHD)
 
 
 ## ---
@@ -128,7 +128,12 @@ ui <- fluidPage(
                                         list("None" = "none",
                                              "Squared" = "sqr",
                                              "Logarithmic" = "log",
-                                             "Exponentially" = "exp")))
+                                             "Exponentially" = "exp",
+                                             "Standardize" = "std",
+                                             "Log Y" = "log_y",
+                                             "Log X" = "log_x",
+                                             "Exp. Y" = "exp_y",
+                                             "Exp. X" = "exp_x")))
       ),
                            
       # conditionalPanel(condition = "input.tabs_reg == 'Linear Regression Model'",
@@ -328,29 +333,62 @@ server <- function(input, output) {
   lmResults <- reactive({
     y <- swiss$Education
     x <- swiss[,input$indepvar]
-    #data <- data[data$vars %in% input$indepvar,]
     swissdata <- swiss
+    predictors <- paste(input$indepvar,collapse="+")
     
     if(input$type=="log"){
-      x <- log(x)
-      y <- log(y)
       swissdata <- log(swissdata)
+      fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
     }
-    if(input$type=="exp"){
-      x <- exp(x)
-      y <- exp(y)
+    else if(input$type=="exp"){
       swissdata <- exp(swissdata)
+      fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
     }
-    if(input$type=="sqr"){
-      x <- exp(x)
-      y <- exp(y)
+    else if(input$type=="sqr"){
       swissdata <- (swissdata)^2
+      fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
     }
-    
-    predictors <- paste(input$indepvar,collapse="+")
-    fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
-    print(fml)
-    lm(fml, data=swissdata)
+    else if(input$type=="exp_y"){
+      swissdata <- exp(swissdata)
+      fml <- as.formula(paste("swissdata$Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swiss)
+    }
+    else if(input$type=="exp_x"){
+      swissdata <- exp(swissdata)
+      fml <- as.formula(paste("swiss$Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
+    }
+    else if(input$type=="log_x"){
+      swissdata <- exp(swissdata)
+      fml <- as.formula(paste("swiss$Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
+    }
+    else if(input$type=="log_y"){
+      swissdata <- log(swissdata)
+      fml <- as.formula(paste("swissdata$Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swiss)
+    }
+    else if(input$type=="std"){
+      swissdata <- standardize(swissdata)
+      fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
+    }
+    else {
+      fml <- as.formula(paste("Education", " ~ ", paste(predictors, collapse="+")))
+      print(fml)
+      lm(fml, data=swissdata)
+    }
   })
   
   # Alte Version - dadurch funktionieren paar plots
@@ -575,6 +613,7 @@ server <- function(input, output) {
     y <- pima$type
     x <- input$pimavars_multi
     pimadata <- pima
+    predictors <- paste(input$pimavars_multi,collapse="+")
     
     if(input$type=="log"){
       pimadata <- log(pimadata[,1:7])
@@ -585,11 +624,13 @@ server <- function(input, output) {
     if(input$type=="sqr"){
       pimadata <- (pimadata[,1:7])^2
     }
+    if(input$type=="std"){
+      pimadata <- standardize(pimadata[,1:7])
+    }
     
-    predictors <- paste(input$pimavars_multi,collapse="+")
     gfml <- as.formula(paste("pima$type", " ~ ", paste(predictors, collapse="+")))
     print(gfml)
-    glm(gfml, data=pimadata, family=binomial)
+    glm(gfml, data=pimadata, family=binomial(link='logit'))
   })
   
   output$pima_summary_y <- renderPrint({
