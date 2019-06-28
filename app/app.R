@@ -1,6 +1,4 @@
-## TODO: 
-##  - Transformation poly, standardisieren rein
-##  - pairs plot?
+## Shiny App StatUE Dominic Viehböck, Lukas Huber - Swiss, PIMA Indians - Exploration & Regression
 
 library(shiny)
 library(maptools)
@@ -11,20 +9,15 @@ library(gridExtra)
 library(ggplot2)
 library(ngram)
 library(corrplot)
-library(GGally)
-library(broom)
 library(popbio)
+library(robustHD)
 
 
 ## ---
 ## Pima Indians libraries
 ## ---
 library(MASS)
-library(mlbench) # for Pima Indian Diabetes dataset
-library(caret) # for prediction building functions
-library(dplyr)
-library(e1071)
-library(robustHD)
+library(caret)
 
 
 ## ---
@@ -135,14 +128,7 @@ ui <- fluidPage(
                                              "Exp. Y" = "exp_y",
                                              "Exp. X" = "exp_x")))
       ),
-                           
-      # conditionalPanel(condition = "input.tabs_reg == 'Linear Regression Model'",
-      #                  div(id="tab1_sidebar",
-      #                      print(h3("Display plots:")),
-      #                      checkboxInput("donum1", "Make #1 plot", value = T),
-      #                      checkboxInput("donum2", "Make #2 plot", value = F),
-      #                      checkboxInput("donum3", "Make #3 plot", value = F))
-      # ),
+
       
       # ---
       # Auswahl für Pima Indians
@@ -391,21 +377,7 @@ server <- function(input, output) {
     }
   })
   
-  # Alte Version - dadurch funktionieren paar plots
-  lmResults_old <- reactive({
-    y <- swiss[,input$outcome_exp]
-    x <- swiss[,input$indepvar]
-    if(input$type=="log"){
-      x <- log(x)
-      y <- log(y)
-    }
-    if(input$type=="exp"){
-      x <- exp(x)
-      y <- exp(y)
-    }
-    
-    lm(y ~ x, data = swiss)
-  })
+
   
   ## ---
   ## Modellzusammenfassung
@@ -571,12 +543,6 @@ server <- function(input, output) {
     par(mfrow=c(1,3), cex.main=2, cex.lab=2, cex.axis=2, mar=c(4,5,2,2))
 
     residuals = summary(lmResults())$residuals
-    #predicted = predict(lmResults_old(), newdata = data.frame(x=swiss[,"Education"]))
-    #print(predicted)
-    #plot(residuals ~ predicted, 
-    #     main="Residuals vs. Fitted Values", xlab="Fitted Values", ylab="Residuals", 
-    #     pch=19, col = COL[1,2])
-    #abline(h = 0, lty = 2)
     d = density(residuals)$y
     h = hist(residuals, plot = FALSE)
     hist(residuals, main="Histogram of Residuals", xlab="Residuals", 
@@ -604,7 +570,6 @@ server <- function(input, output) {
   # Exploring and visualising
   output$pima_exp <- renderPlot({
     #summary(pima)
-    #library GGally
     pairs(subset(pima, select = -c(type)), col = as.factor(pima$type))
     #ggpairs(pima, columns = 1:7, title = "",  mapping=(ggplot2::aes(colour = "type")), axisLabels = "show", columnLabels = colnames(pima[, 1:7]))
   })
@@ -634,17 +599,10 @@ server <- function(input, output) {
   })
   
   output$pima_summary_y <- renderPrint({
-    #summary(pima)
-    #table(pima$type)
     summary(subset(pima, pima$type == "Yes"))
-    #summary(subset(pima, pima$type == "No"))
-    
   })
   
   output$pima_summary_n <- renderPrint({
-    #summary(pima)
-    #table(pima$type)
-    #summary(subset(pima, pima$type == "Yes"))
     summary(subset(pima, pima$type == "No"))
     
   })
@@ -657,12 +615,6 @@ server <- function(input, output) {
     corrplot(cor_pima, method="number")
     
   })
-  
-  # ggplot(pima, aes(x = age, y = type)) +
-  #   geom_jitter(width = 0.5, height = 0.03, alpha = .2)
-  #   geom_smooth(method = "glm", se = FALSE,
-  #               method.args = list(family = "binomial")) +
-  #   labs(y = expression(hat(P)(Diabetic)))
   
   output$pima_logreg <- renderPrint({
     #summary(glmResults())$coefficients[, c(1, 4)]
@@ -764,16 +716,6 @@ server <- function(input, output) {
      
      paste(acc, "%")
     })
-
-  output$pima_modelplot <- renderPlot ({
-    # plot(input$pimavars,pima$type,xlab=input$pimavars,ylab="Probability of Diabetes") # plot with body size on x-axis and survival (0 or 1) on y-axis
-    # 
-    # test = pima[,input$pimavars]
-    # curve(predict(glmResults(), data.frame(test=x),type="resp"),add=TRUE) # draws a curve based on prediction from logistic regression model
-    # 
-    # points(pima[,input$pimavars],fitted(glmResults()),pch=20) # optional: you could skip this draws an invisible set of points of body size survival based on a 'fit' to glm model. pch= changes type of dots.
-    # logi.hist.plot(input$pimavars,pima$type,boxp=FALSE,type="hist",col="gray")
-  })
   
   modFit_GLM2 <- reactive ({
     predictors <- paste(input$pimavars_multi,collapse="+")
