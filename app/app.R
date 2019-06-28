@@ -444,7 +444,7 @@ server <- function(input, output) {
   ## Regressions Plots
   ## ---
   output$lmplot1 <- renderPlot({
-    plot(lmResults())
+    plot(lmResults(), which=1)
   })
   
   output$lmplot2 <- renderPlot({
@@ -456,7 +456,7 @@ server <- function(input, output) {
   })
   
   output$lmplot4 <- renderPlot({
-    plot(lmResults(), which=4)
+    plot(lmResults(), which=5)
   })
   
   ## ---
@@ -705,7 +705,7 @@ server <- function(input, output) {
   })
   
   output$pima_glmplot <- renderPlot({
-    plot(glmResults())
+    plot(glmResults(), which=1)
   })
   output$pima_glmplot2 <- renderPlot({
     plot(glmResults(), which=2)
@@ -714,7 +714,7 @@ server <- function(input, output) {
     plot(glmResults(), which=3)
   })
   output$pima_glmplot4 <- renderPlot({
-    plot(glmResults(), which=4)
+    plot(glmResults(), which=5)
   })
   
   ## ---
