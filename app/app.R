@@ -175,6 +175,11 @@ ui <- fluidPage(
                            br(),
                            tabsetPanel(id = "tabs_exp", type = "tabs",
                                        
+                                       tabPanel("Distribution",
+                                                fluidRow(
+                                                  column(6, plotOutput("distribution1")),
+                                                  column(6, plotOutput("distribution2")))),
+                                       
                                        tabPanel("Localisation",
                                                 fluidRow(
                                                   column(6, plotOutput("boxplot1")),
@@ -185,11 +190,6 @@ ui <- fluidPage(
                                        tabPanel("Scatterplot", fluidRow(
                                                   column(12, plotOutput("scatterplot")),
                                                   column(12, plotOutput("corrplot")))),
-                                        
-                                       tabPanel("Distribution",
-                                                fluidRow(
-                                                  column(6, plotOutput("distribution1")),
-                                                  column(6, plotOutput("distribution2")))),
                                        
                                        
                                        tabPanel("QQ-plot",
@@ -775,9 +775,13 @@ server <- function(input, output) {
     # logi.hist.plot(input$pimavars,pima$type,boxp=FALSE,type="hist",col="gray")
   })
   
-   inTrain <- createDataPartition(pima$type, p = .7, list = FALSE) 
-   pimaTrain <- pima[inTrain,]
-   pimaTest <- pima[-inTrain,]
+  modFit_GLM2 <- reactive ({
+    predictors <- paste(input$pimavars_multi,collapse="+")
+    gfml <- as.formula(paste("type", " ~ ", paste(predictors, collapse="+")))
+    
+    train(gfml, data = Pima.tr, method = "glm")
+    
+  })
    modFit_GLM <- train(type ~., data = Pima.tr, method = "glm")
    predictions <- predict(modFit_GLM,newdata=Pima.te)
   
@@ -793,7 +797,7 @@ server <- function(input, output) {
      colnames(values) <- c("npreg","glu","bp","skin",
                            "bmi","ped", "age")
      
-     prediction_value <- predict(modFit_GLM,newdata=values, type = "prob")[[2]]
+     prediction_value <- predict(modFit_GLM2(),newdata=values, type = "prob")[[2]]
      paste(round(100* prediction_value, 2), "%", sep="")
    }
 
